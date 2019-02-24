@@ -1,0 +1,84 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Updates Lambda From A Zip File",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Use the same name you used when starting the other stacks"
+        }
+    },
+    "Resources": {
+        "S3TriggerLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Timeout": "60",
+                "Runtime": "nodejs6.10",
+                "Handler": "index.handler",
+                "Environment": {
+                    "Variables": {
+                        "SOURCE_S3_BUCKET_NAME": {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${EnvironmentName}-S3BucketName"
+                            }
+                        },
+                        "SOURCE_FILE_NAME": {
+                            "Fn::Join": ["", [{
+                                    "Ref": "EnvironmentName"
+                                },
+                                "-ZippedRepoFileName.zip"
+                            ]]
+                        },
+                        "DESTINATION_FUNCTION_NAME": {
+                            "Fn::Join": ["", [{
+                                    "Ref": "EnvironmentName"
+                                },
+                                "-",
+                                {
+                                    "Fn::ImportValue": {
+                                        "Fn::Sub": "${EnvironmentName}-AppName"
+                                    }
+                                }
+                            ]]
+                        }
+                    }
+                },
+                "Role": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${EnvironmentName}-LambdaExecutionRoleARN"
+                    }
+                },
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${EnvironmentName}-S3BucketName"
+                        }
+                    },
+                    "S3Key": {
+                        "Fn::Join": ["", [{
+                                "Ref": "EnvironmentName"
+                            },
+                            "-S3-Upload-Trigger.zip"
+                        ]]
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "S3TriggerLambdaARN": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "S3TriggerLambda",
+                    "Arn"
+                ]
+            },
+            "Description": "S3 Trigger Lambda Function ARN",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-S3TriggerLambdaARN"
+                }
+            }
+        }
+    }
+}

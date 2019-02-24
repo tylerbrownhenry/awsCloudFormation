@@ -1,0 +1,69 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creates a user pool",
+    "Parameters": {
+        "UserPoolName": {
+            "Description": "User Pool Name",
+            "Default": "UserPool",
+            "Type": "String"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Use the exact same name entered on the first stack"
+        }
+    },
+    "Resources": {
+        "UserPool": {
+            "Type": "AWS::Cognito::UserPool",
+            "Properties": {
+                "UserPoolName": {
+                    "Ref": "UserPoolName"
+                },
+                "Schema": [{
+                        "Name": "email",
+                        "AttributeDataType": "String",
+                        "Mutable": false,
+                        "Required": true,
+                        "StringAttributeConstraints": {
+                            "MaxLength": "100",
+                            "MinLength": "1"
+                        }
+                    }
+                ],
+                "AliasAttributes": [
+                    "email"
+                ],
+                "EmailVerificationMessage": "Your verification code is {####}.",
+                "EmailVerificationSubject": "Your verification code",
+                "MfaConfiguration": "OFF",
+                "DeviceConfiguration": {
+                    "ChallengeRequiredOnNewDevice": "false",
+                    "DeviceOnlyRememberedOnUserPrompt": "false"
+                },
+                "Policies": {
+                    "PasswordPolicy": {
+                        "MinimumLength": 6,
+                        "RequireLowercase": true,
+                        "RequireNumbers": true,
+                        "RequireSymbols": true,
+                        "RequireUppercase": true
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "UserPoolName": {
+            "Value": {
+                "Fn::Sub": "${EnvironmentName}-${UserPoolName}"
+            },
+            "Description": "Name of user pools",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-UserPool"
+                }
+            }
+        }
+    }
+}

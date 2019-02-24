@@ -1,0 +1,33 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Adds invoke policy for CodeCommit and Lambda",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Use the same name when starting the other stacks"
+        }
+    },
+    "Resources": {
+        "LambdaInvokePermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${EnvironmentName}-CodeCommitTriggerLambdaARN"
+                    }
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal":"codecommit.amazonaws.com",
+                "SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                },
+                "SourceArn": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${EnvironmentName}-CodeCommitRepoARN"
+                    }
+                }
+            }
+        }
+    }
+}

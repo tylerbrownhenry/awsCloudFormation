@@ -1,0 +1,244 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creates users, roles and policies for the environment",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Use the same name when starting the other stacks"
+        },
+        "Branch": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Code Commit Branch for that will invoke automatic environment updates when pushed"
+        },
+        "Region": {
+            "Type": "String",
+            "Default": "us-west-2",
+            "Description": "AWS Region for project"
+        },
+        "BucketName": {
+            "Type": "String",
+            "Default": "s3storagebucket",
+            "Description": "Make this all lowercase with no spaces or special characters. Name to help you identify your bucket, will be prefixed with the environment name followed by as dash"
+        },
+        "AppName": {
+            "Type": "String",
+            "Default": "MyNewApp",
+            "Description": "Name for app being made in lambda"
+        }
+    },
+    "Resources": {
+        "LambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": ["lambda.amazonaws.com"]
+                        },
+                        "Action": ["sts:AssumeRole"]
+                    }]
+                },
+                "Path": "/",
+                "RoleName": "LambdaExecutionRole"
+            }
+        },
+        "LambdaExecutionUser": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "UserName": "LambdaExecutionUser"
+            }
+        },
+        "LambdaExecutionPolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                            "Effect": "Allow",
+                            "Action": "s3:*",
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "codecommit:BatchGet*",
+                                "codecommit:Get*",
+                                "codecommit:List*",
+                                "codecommit:Create*",
+                                "codecommit:DeleteBranch",
+                                "codecommit:Describe*",
+                                "codecommit:Put*",
+                                "codecommit:Post*",
+                                "codecommit:Merge*",
+                                "codecommit:Test*",
+                                "codecommit:Update*",
+                                "codecommit:GitPull",
+                                "codecommit:GitPush"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "lambda:*",
+                            ],
+                            "Resource": "*"
+                        }, {
+                            "Effect": "Allow",
+                            "Action": [
+                                "logs:*"
+                            ],
+                            "Resource": "arn:aws:logs:*:*:*"
+                        }, {
+                            "Effect": "Allow",
+                            "Action": "iam:PassRole",
+                            "Resource": "*"
+                        }
+                    ]
+                },
+                "PolicyName": "LambdaExecutionPolicy",
+                "Roles": ["LambdaExecutionRole"],
+                "Users": ["LambdaExecutionUser"]
+            }
+        },
+        "IAMPassRolePolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                        "Sid": "VisualEditor0",
+                        "Effect": "Allow",
+                        "Action": "iam:PassRole",
+                        "Resource": "*"
+                    }]
+                },
+                "PolicyName": "IAMPassRolePolicy",
+                "Roles": [{
+                    "Ref": "LambdaExecutionRole"
+                }],
+                "Users": [{
+                    "Ref": "LambdaExecutionUser"
+                }]
+            }
+        }
+    },
+    "Outputs": {
+        "AppName": {
+            "Value": {
+                "Ref": "AppName"
+            },
+            "Description": "Name of App",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-AppName"
+                }
+            }
+        },
+        "AppLambdaName": {
+            "Value": {
+                "Fn::Join": ["", [{
+                        "Ref": "EnvironmentName"
+                    },
+                    "-",
+                    {
+                        "Ref": "AppName"
+                    }
+                ]]
+            },
+            "Description": "Name of App Lambda Function",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-AppLambdaName"
+                }
+            }
+        },
+        "S3BucketName": {
+            "Value": {
+                "Fn::Sub": "${EnvironmentName}-${BucketName}"
+            },
+            "Description": "Name of S3 Bucket",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-S3BucketName"
+                }
+            }
+        },
+        "Branch": {
+            "Value": {
+                "Ref": "Branch"
+            },
+            "Description": "Branch that this environment listens to",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-Branch"
+                }
+            }
+        },
+        "CodeCommitTriggerLambdaFileName": {
+            "Value": {
+                "Fn::Sub": "${EnvironmentName}-CodeCommitTriggerLambda.zip"
+            },
+            "Description": "Name of filed uploaded to S3",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-CodeCommitTriggerLambdaFileName"
+                }
+            }
+        },
+        "Region": {
+            "Value": {
+                "Ref": "Region"
+            },
+            "Description": "AWS Region for project",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-Region"
+                }
+            }
+        },
+        "LambdaExecutionRoleARN": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "LambdaExecutionRole",
+                    "Arn"
+                ]
+            },
+            "Description": "Lambda Execution Role ARN",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-LambdaExecutionRoleARN"
+                }
+            }
+        },
+        "LambdaExecutionUserARN": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "LambdaExecutionUser",
+                    "Arn"
+                ]
+            },
+            "Description": "Lambda Execution User ARN",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-LambdaExecutionUserARN"
+                }
+            }
+        },
+        "CreateRolesUserPoliciesName": {
+            "Value": {
+                "Fn::Sub": "${AWS::StackName}"
+            },
+            "Description": "Name of Create Roles User Policies Stack",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-CreateRolesUserPoliciesName"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,93 @@
+#More info about connecting to your repo after it is created: https: //docs.aws.amazon.com/console/codecommit/connect-https-unix
+#You can visit the Code Commit console to see your new repo.
+
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creates Code Commit Repository with a event trigger that updates lambda when anything is changed",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Use the same name you used when starting the other stacks"
+        },
+        "CodeCommitRepoName": {
+            "Type": "String",
+            "Default": "CodeCommitRepoName",
+            "Description": "Enter a name for your CodeCommit Repo."
+        },
+        "TriggerName": {
+            "Type": "String",
+            "Default": "BranchPushTrigger",
+            "Description": "Enter a name for the trigger that will be called for Code Commit events."
+        },
+        "InitalEvent": {
+            "Type": "CommaDelimitedList",
+            "Default": "updateReference,createReference",
+            "Description": "Code Commit events to trigger function. You can add multiple by separating them by commas. More info: https://docs.aws.amazon.com/codecommit/latest/APIReference/API_RepositoryTrigger.html"
+        }
+    },
+    "Resources": {
+        "codeCommitRepo": {
+            "Type": "AWS::CodeCommit::Repository",
+            "Properties": {
+                "RepositoryName": {
+                    "Ref": "CodeCommitRepoName"
+                },
+                "Triggers": [{
+                    "Name": {
+                        "Ref": "TriggerName"
+                    },
+                    "DestinationArn": {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${EnvironmentName}-CodeCommitTriggerLambdaARN"
+                        }
+                    },
+                    "CustomData": "",
+                    "Branches": [{
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${EnvironmentName}-Branch"
+                        }
+                    }],
+                    "Events": [
+                        "all"
+                    ]
+                }],
+            }
+        }
+    },
+    "Outputs": {
+        "CodeCommitCloneUrlHttp": {
+            "Description": "Code Commit repository clone URL",
+            "Value": {
+                "Fn::GetAtt": ["codeCommitRepo", "CloneUrlHttp"]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-CodeCommitCloneUrlHttp"
+                }
+            }
+        },
+        "CodeCommitRepoARN": {
+            "Description": "Code Commit repository ARN",
+            "Value": {
+                "Fn::GetAtt": ["codeCommitRepo", "Arn"]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-CodeCommitRepoARN"
+                }
+            }
+        },
+        "CodeCommitCloneUrlSSH": {
+            "Description": "Code Commit repository clone SSH url",
+            "Value": {
+                "Fn::GetAtt": ["codeCommitRepo", "CloneUrlSsh"]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-CodeCommitCloneUrlSSH"
+                }
+            }
+        }
+    }
+}

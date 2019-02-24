@@ -1,0 +1,68 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Create App Lambda",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Use the same name you used when starting the other stacks"
+        }
+    },
+    "Resources": {
+        "AppLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::Join": ["", [{
+                            "Ref": "EnvironmentName"
+                        },
+                        "-",
+                        {
+                          "Fn::ImportValue": {
+                            "Fn::Sub": "${EnvironmentName}-AppName"
+                          }
+                        }
+                    ]]
+                },
+                "Timeout": "60",
+                "Runtime": "nodejs6.10",
+                "Handler": "index.handler",
+                "Role": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${EnvironmentName}-LambdaExecutionRoleARN"
+                    }
+                },
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${EnvironmentName}-S3BucketName"
+                        }
+                    },
+                    "S3Key": {
+                        "Fn::Join": ["", [{
+                                "Ref": "EnvironmentName"
+                            },
+                            "-ZippedRepoFileName.zip"
+                        ]]
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "AppLambdaARN": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "AppLambda",
+                    "Arn"
+                ]
+            },
+            "Description": "App Lambda Function ARN",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-AppLambdaARN"
+                }
+            }
+        }
+    }
+}

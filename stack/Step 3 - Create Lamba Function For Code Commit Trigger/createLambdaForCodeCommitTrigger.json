@@ -1,0 +1,77 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creates Lambda from a zip file",
+    "Parameters": {
+        "EnvironmentName": {
+            "Type": "String",
+            "Default": "development",
+            "Description": "Use the same name you used when starting the other stacks"
+        }
+    },
+    "Resources": {
+        "CodeCommitTriggerLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Timeout": "60",
+                "Runtime": "python2.7",
+                "Handler": "app.lambda_handler",
+                "Environment": {
+                    "Variables": {
+                        "S3_BUCKET": {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${EnvironmentName}-S3BucketName"
+                            }
+                        },
+                        "BRANCH": {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${EnvironmentName}-Branch"
+                            }
+                        },
+                        "FILE_NAME": {
+                            "Fn::Join": ["", [{
+                                    "Ref": "EnvironmentName"
+                                },
+                                "-ZippedRepoFileName.zip"
+                            ]]
+                        }
+                    }
+                },
+                "Role": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${EnvironmentName}-LambdaExecutionRoleARN"
+                    }
+                },
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${EnvironmentName}-S3BucketName"
+                        }
+                    },
+                    "S3Key": {
+                        "Fn::Join": ["", [{
+                                "Ref": "EnvironmentName"
+                            },
+                            "-CodeCommitTriggerLambda.zip"
+                        ]]
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "CodeCommitTriggerLambdaARN": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "CodeCommitTriggerLambda",
+                    "Arn"
+                ]
+            },
+            "Description": "Code Commit Trigger Lambda Function ARN",
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${EnvironmentName}-CodeCommitTriggerLambdaARN"
+                }
+            }
+        }
+    }
+}
