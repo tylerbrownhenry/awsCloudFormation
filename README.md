@@ -1,6 +1,8 @@
 # CloudFormation Stacks to Setup Auto Deploy Based on Branch
 
-This is a series of cloudformation stacks that creates a user pool, static website, and commit triggers deployment updates for lambda funcitions.
+This is a series of cloudformation stacks that creates a user pool, static website, and commit triggers will deploy updates to lambda funcitions throught S3.
+
+BETA
 
 ## Prerequisites
 
